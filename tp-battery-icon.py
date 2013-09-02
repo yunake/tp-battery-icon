@@ -154,12 +154,12 @@ class ControlTPacpi():
 
     def get_start_threshold(self):
         param = hex(self.bat)
-        result = self.acpi_call("\_SB.PCI0.LPC.EC.HKEY.BCTG " + param)
+        result = self.first_nullstr(self.acpi_call("\_SB.PCI0.LPC.EC.HKEY.BCTG " + param))
         return int(result, 16) - (3 * 256)
 
     def get_stop_threshold(self):
         param = hex(self.bat)
-        result = self.acpi_call("\_SB.PCI0.LPC.EC.HKEY.BCSG " + param)
+        result = self.first_nullstr(self.acpi_call("\_SB.PCI0.LPC.EC.HKEY.BCSG " + param))
         ret = int(result, 16) - (3 * 256)
         if ret == 0:
             ret = 100
@@ -182,6 +182,17 @@ class ControlTPacpi():
     def start_cycle(self):
         param = hex(self.bat)
         self.acpi_call("\_SB.PCI0.LPC.EC.HKEY.BDSG " + param)
+
+    def first_nullstr(self, instring):
+        """ filter out first null-terminated string from a string.
+            required on 3.10+ kernels because acpi_call there returns several such strings
+            and we are only interested in the first one.
+        """
+        try:
+            return instring[0:instring.index('\x00')]
+        except ValueError:
+            # this is required for compatibility with older kernels
+            return instring
 
 #-------------------------------------------------------------------------------
 
